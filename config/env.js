@@ -5,7 +5,6 @@ config({ path: '.env' });
 export const {
     PORT,
     MONGODB_URI_USERS,
-    MONGODB_URI_CONTACT,
     MONGODB_URI_PRODUCTS,
     JWT_SECRET,
     JWT_EXPIRY,

@@ -1,14 +1,21 @@
-import Contact from "../models/contact.model.js";
+import prisma from "../database/neon.js";
+import { customAlphabet } from 'nanoid';
+
+// Generate CUID-like IDs (compatible with Prisma's cuid())
+const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 25);
 
 export const createContact = async (req, res, next) => {
     try {
         const { name, email, subject, message } = req.body;
 
-        const newContact = await Contact.create({
-            name,
-            email,
-            subject,
-            message
+        const newContact = await prisma.contact.create({
+            data: {
+                id: `c${nanoid()}`, // Generate CUID-like ID
+                name,
+                email,
+                subject,
+                message
+            }
         });
 
         res.status(201).json({
@@ -23,7 +30,11 @@ export const createContact = async (req, res, next) => {
 
 export const getContacts = async (req, res, next) => {
     try {
-        const contacts = await Contact.find().sort({ createdAt: -1 });
+        const contacts = await prisma.contact.findMany({
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
 
         res.status(200).json({
             success: true,
