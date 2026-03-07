@@ -30,4 +30,6 @@ export const {
     MPESA_PASSKEY,
     MPESA_SHORTCODE,
     MPESA_CALLBACK_URL,
+    UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN,
 } = process.env;

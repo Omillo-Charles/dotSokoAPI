@@ -1,9 +1,11 @@
 import { Router } from "express";
 import prisma from "../database/postgresql.js";
+import cacheMiddleware from "../middlewares/cache.middleware.js";
 
 const statsRouter = Router();
 
-statsRouter.get("/", async (req, res, next) => {
+// Cache stats for 5 minutes
+statsRouter.get("/", cacheMiddleware(300), async (req, res, next) => {
     try {
         const [usersCount, shopsCount, productsCount] = await Promise.all([
             prisma.user.count(),

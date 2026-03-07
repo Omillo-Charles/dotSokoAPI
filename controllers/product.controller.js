@@ -1,5 +1,6 @@
 import prisma from "../database/postgresql.js";
 import { uploadToImageKit } from "../config/imagekit.js";
+import { invalidateCache } from "../middlewares/cache.middleware.js";
 
 export const trackActivity = async (req, res, next) => {
     try {
@@ -168,6 +169,9 @@ export const rateProduct = async (req, res, next) => {
             data: { rating: averageRating, reviewsCount }
         });
 
+        // Invalidate product cache after rating
+        await invalidateCache(`cache:/api/v1/products/${productId}*`);
+
         res.status(200).json({
             success: true,
             message: "Rating submitted successfully",
@@ -272,6 +276,10 @@ export const createProduct = async (req, res, next) => {
         });
 
         console.log("Product created successfully:", product.id);
+
+        // Invalidate product caches
+        await invalidateCache("cache:/api/v1/products*");
+        await invalidateCache("cache:/api/v1/products/feed*");
 
         res.status(201).json({
             success: true,
@@ -630,6 +638,11 @@ export const updateProduct = async (req, res, next) => {
 
         console.log("Product updated successfully:", updatedProduct.id);
 
+        // Invalidate specific product and list caches
+        await invalidateCache(`cache:/api/v1/products/${id}*`);
+        await invalidateCache("cache:/api/v1/products?*");
+        await invalidateCache("cache:/api/v1/products/feed*");
+
         res.status(200).json({
             success: true,
             message: "Product updated successfully",
@@ -660,6 +673,11 @@ export const deleteProduct = async (req, res, next) => {
             throw error;
         }
         await prisma.product.delete({ where: { id } });
+
+        // Invalidate product caches
+        await invalidateCache(`cache:/api/v1/products/${id}*`);
+        await invalidateCache("cache:/api/v1/products*");
+        await invalidateCache("cache:/api/v1/products/feed*");
 
         res.status(200).json({
             success: true,

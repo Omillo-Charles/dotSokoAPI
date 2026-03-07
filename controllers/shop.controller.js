@@ -2,6 +2,7 @@ import prisma from "../database/postgresql.js";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config/env.js";
 import { uploadToImageKit } from "../config/imagekit.js";
+import { invalidateCache } from "../middlewares/cache.middleware.js";
 
 export const createShop = async (req, res, next) => {
     try {
@@ -51,6 +52,9 @@ export const createShop = async (req, res, next) => {
         const shop = await prisma.shop.create({
             data
         });
+
+        // Invalidate shop caches
+        await invalidateCache("cache:/api/v1/shops*");
 
         res.status(201).json({
             success: true,
@@ -371,6 +375,12 @@ export const updateShop = async (req, res, next) => {
         const updated = Object.keys(data).length > 0 ? await prisma.shop.update({ where: { id: shop.id }, data }) : shop;
 
         console.log("Shop updated successfully:", updated.id);
+        
+        // Invalidate shop caches
+        await invalidateCache(`cache:/api/v1/shops/${shop.id}*`);
+        await invalidateCache(`cache:/api/v1/shops/handle/${shop.username}*`);
+        await invalidateCache("cache:/api/v1/shops?*");
+        
         res.status(200).json({
             success: true,
             message: "Shop updated successfully",
@@ -394,6 +404,12 @@ export const deleteShop = async (req, res, next) => {
 
         await prisma.product.deleteMany({ where: { shopId: shop.id } });
         await prisma.shop.delete({ where: { id: shop.id } });
+
+        // Invalidate shop and product caches
+        await invalidateCache(`cache:/api/v1/shops/${shop.id}*`);
+        await invalidateCache(`cache:/api/v1/shops/handle/${shop.username}*`);
+        await invalidateCache("cache:/api/v1/shops*");
+        await invalidateCache("cache:/api/v1/products*");
 
         res.status(200).json({
             success: true,
@@ -462,6 +478,9 @@ export const toggleFollowShop = async (req, res, next) => {
             where: { id },
             include: { _count: { select: { followers: true } } }
         });
+
+        // Invalidate shop caches after follow/unfollow
+        await invalidateCache(`cache:/api/v1/shops/${id}*`);
 
         res.status(200).json({
             success: true,
@@ -584,6 +603,9 @@ export const rateShop = async (req, res, next) => {
             data: { rating: averageRating, reviewsCount }
         });
 
+        // Invalidate shop cache after rating
+        await invalidateCache(`cache:/api/v1/shops/${id}*`);
+
         res.status(200).json({
             success: true,
             message: "Shop rated successfully",
@@ -634,6 +656,11 @@ export const rateShopByHandle = async (req, res, next) => {
             where: { id: shop.id },
             data: { rating: averageRating, reviewsCount }
         });
+
+        // Invalidate shop cache after rating
+        await invalidateCache(`cache:/api/v1/shops/${shop.id}*`);
+        await invalidateCache(`cache:/api/v1/shops/handle/${username}*`);
+
         res.status(200).json({
             success: true,
             message: "Shop rated successfully",

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
+    "@upstash/redis": "^1.36.3",
     "axios": "^1.13.4",
     "bcryptjs": "^3.0.3",
     "browser-image-compression": "^2.0.2",
