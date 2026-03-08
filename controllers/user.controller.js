@@ -31,7 +31,18 @@ export const deleteAccount = async (req, res, next) => {
 export const getCurrentUser = async (req, res, next) => {
     try {
         const userId = req.user?.id || req.user?._id?.toString();
-        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const user = await prisma.user.findUnique({ 
+            where: { id: userId },
+            include: {
+                shop: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true
+                    }
+                }
+            }
+        });
         
         if (!user) {
             const error = new Error('User not found');

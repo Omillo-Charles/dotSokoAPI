@@ -1,10 +1,20 @@
 import { Redis } from '@upstash/redis';
 import { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } from './env.js';
 
-// Initialize Upstash Redis client
+// Initialize Upstash Redis client with a timeout to prevent hanging on network issues
 const redis = new Redis({
   url: UPSTASH_REDIS_REST_URL,
   token: UPSTASH_REDIS_REST_TOKEN,
+  // Add a 2-second timeout to all Redis requests
+  fetch: (url, config) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    
+    return fetch(url, {
+      ...config,
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId));
+  }
 });
 
 // Cache utility functions

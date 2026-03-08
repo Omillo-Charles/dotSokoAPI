@@ -9,6 +9,338 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                     String             @id @default(cuid())
+  name                   String
+  email                  String             @unique
+  password               String?
+  googleId               String?            @unique
+  githubId               String?            @unique
+  refreshToken           String?
+  resetPasswordToken     String?
+  resetPasswordExpires   DateTime?
+  isVerified             Boolean            @default(false)
+  verificationOTP        String?
+  verificationOTPExpires DateTime?
+  accountType            AccountType        @default(buyer)
+  isPremium              Boolean            @default(false)
+  premiumPlan            PremiumPlan?
+  premiumUntil           DateTime?
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+  activities             Activity[]
+  addresses              Address[]
+  cart                   Cart?
+  comments               Comment[]
+  mpesaTransactions      MpesaTransaction[]
+  orders                 Order[]
+  ratings                Rating[]
+  shop                   Shop?
+  update_views           update_views[]
+  wishlist               Wishlist?
+  followedShops          Shop[]             @relation("ShopFollowers")
+
+  @@index([email])
+  @@index([googleId])
+  @@index([githubId])
+  @@index([isPremium])
+  @@map("users")
+}
+
+model Address {
+  id        String      @id @default(cuid())
+  userId    String      @map("user_id")
+  name      String
+  type      AddressType @default(home)
+  phone     String
+  city      String
+  street    String
+  isDefault Boolean     @default(false) @map("is_default")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isDefault])
+  @@map("addresses")
+}
+
+model Shop {
+  id             String    @id @default(cuid())
+  ownerId        String    @unique @map("owner_id")
+  name           String
+  username       String?   @unique
+  description    String
+  category       String
+  address        String
+  phone          String
+  email          String
+  avatar         String?
+  banner         String?
+  isVerified     Boolean   @default(false) @map("is_verified")
+  rating         Float     @default(0)
+  reviewsCount   Int       @default(0) @map("reviews_count")
+  followersCount Int       @default(0) @map("followers_count")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  products       Product[]
+  ratings        Rating[]
+  owner          User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  updates        updates[]
+  followers      User[]    @relation("ShopFollowers")
+
+  @@index([ownerId])
+  @@index([username])
+  @@index([category])
+  @@index([isVerified])
+  @@map("shops")
+}
+
+model Product {
+  id            String      @id @default(cuid())
+  shopId        String      @map("shop_id")
+  name          String
+  description   String
+  content       String?
+  price         Float
+  category      String
+  stock         Int         @default(1)
+  image         String?
+  images        String[]    @default([])
+  rating        Float       @default(0)
+  reviewsCount  Int         @default(0) @map("reviews_count")
+  likesCount    Int         @default(0) @map("likes_count")
+  repostsCount  Int         @default(0) @map("reposts_count")
+  commentsCount Int         @default(0) @map("comments_count")
+  sizes         String[]    @default([])
+  colors        String[]    @default([])
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  activities    Activity[]
+  cartItems     CartItem[]
+  comments      Comment[]
+  orderItems    OrderItem[]
+  shop          Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ratings       Rating[]
+  updates       updates[]
+  wishlistedBy  Wishlist[]  @relation("ProductToWishlist")
+
+  @@index([shopId])
+  @@index([category])
+  @@index([price])
+  @@index([createdAt(sort: Desc)])
+  @@map("products")
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique @map("user_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  items     CartItem[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String   @map("cart_id")
+  productId String   @map("product_id")
+  quantity  Int      @default(1)
+  size      String?
+  color     String?
+  image     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([cartId])
+  @@index([productId])
+  @@map("cart_items")
+}
+
+model Wishlist {
+  id        String    @id @default(cuid())
+  userId    String    @unique @map("user_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products  Product[] @relation("ProductToWishlist")
+
+  @@index([userId])
+  @@map("wishlists")
+}
+
+model Order {
+  id             String        @id @default(cuid())
+  userId         String        @map("user_id")
+  subtotal       Float         @default(0)
+  totalAmount    Float         @map("total_amount")
+  shippingFee    Float         @default(0) @map("shipping_fee")
+  status         OrderStatus   @default(pending)
+  paymentStatus  PaymentStatus @default(pending) @map("payment_status")
+  paymentMethod  String        @default("Cash on Delivery") @map("payment_method")
+  shippingName   String        @map("shipping_name")
+  shippingPhone  String        @map("shipping_phone")
+  shippingCity   String        @map("shipping_city")
+  shippingStreet String        @map("shipping_street")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  items          OrderItem[]
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String   @map("order_id")
+  productId String   @map("product_id")
+  shopId    String   @map("shop_id")
+  name      String
+  price     Float
+  quantity  Int
+  image     String?
+  size      String?
+  color     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([shopId])
+  @@map("order_items")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  userId    String   @map("user_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("comments")
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  productId String?  @map("product_id")
+  shopId    String?  @map("shop_id")
+  userId    String   @map("user_id")
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop      Shop?    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId], name: "unique_product_user_rating")
+  @@unique([shopId, userId], name: "unique_shop_user_rating")
+  @@index([productId])
+  @@index([shopId])
+  @@index([userId])
+  @@map("ratings")
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  userId      String       @map("user_id")
+  type        ActivityType
+  productId   String?      @map("product_id")
+  category    String?
+  searchQuery String?      @map("search_query")
+  weight      Int          @default(1)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  product     Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+model MpesaTransaction {
+  id                 String            @id @default(cuid())
+  merchantRequestId  String            @map("merchant_request_id")
+  checkoutRequestId  String            @unique @map("checkout_request_id")
+  resultCode         Int?
+  resultDesc         String?
+  amount             Float?
+  mpesaReceiptNumber String?           @map("mpesa_receipt_number")
+  transactionDate    DateTime?         @map("transaction_date")
+  phoneNumber        String            @map("phone_number")
+  status             TransactionStatus @default(pending)
+  userId             String?           @map("user_id")
+  metadata           Json?
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  user               User?             @relation(fields: [userId], references: [id])
+
+  @@map("mpesa_transactions")
+}
+
+model Contact {
+  id        String   @id
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([createdAt(sort: Desc)])
+  @@map("contacts")
+}
+
+model update_views {
+  id        String   @id
+  update_id String
+  user_id   String
+  viewed_at DateTime @default(now())
+  updates   updates  @relation(fields: [update_id], references: [id], onDelete: Cascade)
+  users     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([update_id, user_id])
+  @@index([update_id])
+  @@index([user_id])
+}
+
+model updates {
+  id           String         @id
+  shop_id      String
+  type         String         @default("image")
+  media_url    String
+  product_id   String?
+  caption      String?
+  views_count  Int            @default(0)
+  expires_at   DateTime
+  created_at   DateTime       @default(now())
+  updated_at   DateTime
+  update_views update_views[]
+  products     Product?       @relation(fields: [product_id], references: [id])
+  shops        Shop           @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@index([created_at(sort: Desc)])
+  @@index([expires_at])
+  @@index([shop_id])
+}
+
 enum AccountType {
   buyer
   seller
@@ -53,313 +385,4 @@ enum ActivityType {
   cart
   purchase
   search
-}
-
-model User {
-  id                     String       @id @default(cuid())
-  name                   String
-  email                  String       @unique
-  password               String?
-  googleId               String?      @unique
-  githubId               String?      @unique
-  refreshToken           String?
-  resetPasswordToken     String?
-  resetPasswordExpires   DateTime?
-  isVerified             Boolean      @default(false)
-  verificationOTP        String?
-  verificationOTPExpires DateTime?
-  accountType            AccountType  @default(buyer)
-  isPremium              Boolean      @default(false)
-  premiumPlan            PremiumPlan?
-  premiumUntil           DateTime?
-  createdAt              DateTime     @default(now()) @map("created_at")
-  updatedAt              DateTime     @updatedAt @map("updated_at")
-
-  addresses         Address[]
-  shop              Shop?
-  cart              Cart?
-  wishlist          Wishlist?
-  orders            Order[]
-  activities        Activity[]
-  comments          Comment[]
-  ratings           Rating[]
-  mpesaTransactions MpesaTransaction[]
-  followedShops     Shop[]             @relation("ShopFollowers")
-
-  @@index([email])
-  @@index([googleId])
-  @@index([githubId])
-  @@index([isPremium])
-  @@map("users")
-}
-
-model Address {
-  id        String      @id @default(cuid())
-  userId    String      @map("user_id")
-  name      String
-  type      AddressType @default(home)
-  phone     String
-  city      String
-  street    String
-  isDefault Boolean     @default(false) @map("is_default")
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([isDefault])
-  @@map("addresses")
-}
-
-model Shop {
-  id             String   @id @default(cuid())
-  ownerId        String   @unique @map("owner_id")
-  name           String
-  username       String?  @unique
-  description    String
-  category       String
-  address        String
-  phone          String
-  email          String
-  avatar         String?
-  banner         String?
-  isVerified     Boolean  @default(false) @map("is_verified")
-  rating         Float    @default(0)
-  reviewsCount   Int      @default(0) @map("reviews_count")
-  followersCount Int      @default(0) @map("followers_count")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  products  Product[]
-  ratings   Rating[]
-  followers User[]    @relation("ShopFollowers")
-
-  @@index([ownerId])
-  @@index([username])
-  @@index([category])
-  @@index([isVerified])
-  @@map("shops")
-}
-
-model Product {
-  id            String   @id @default(cuid())
-  shopId        String   @map("shop_id")
-  name          String
-  description   String
-  content       String?
-  price         Float
-  category      String
-  stock         Int      @default(1)
-  image         String?
-  images        String[] @default([])
-  rating        Float    @default(0)
-  reviewsCount  Int      @default(0) @map("reviews_count")
-  likesCount    Int      @default(0) @map("likes_count")
-  repostsCount  Int      @default(0) @map("reposts_count")
-  commentsCount Int      @default(0) @map("comments_count")
-  sizes         String[] @default([])
-  colors        String[] @default([])
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  shop         Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  cartItems    CartItem[]
-  wishlistedBy Wishlist[]
-  comments     Comment[]
-  ratings      Rating[]
-  activities   Activity[]
-  orderItems   OrderItem[]
-
-  @@index([shopId])
-  @@index([category])
-  @@index([price])
-  @@index([createdAt(sort: Desc)])
-  @@map("products")
-}
-
-model Cart {
-  id        String   @id @default(cuid())
-  userId    String   @unique @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items CartItem[]
-
-  @@index([userId])
-  @@map("carts")
-}
-
-model CartItem {
-  id        String   @id @default(cuid())
-  cartId    String   @map("cart_id")
-  productId String   @map("product_id")
-  quantity  Int      @default(1)
-  size      String?
-  color     String?
-  image     String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([cartId])
-  @@index([productId])
-  @@map("cart_items")
-}
-
-model Wishlist {
-  id        String   @id @default(cuid())
-  userId    String   @unique @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  products Product[]
-
-  @@index([userId])
-  @@map("wishlists")
-}
-
-model Order {
-  id             String        @id @default(cuid())
-  userId         String        @map("user_id")
-  subtotal       Float         @default(0)
-  totalAmount    Float         @map("total_amount")
-  shippingFee    Float         @default(0) @map("shipping_fee")
-  status         OrderStatus   @default(pending)
-  paymentStatus  PaymentStatus @default(pending) @map("payment_status")
-  paymentMethod  String        @default("Cash on Delivery") @map("payment_method")
-  shippingName   String        @map("shipping_name")
-  shippingPhone  String        @map("shipping_phone")
-  shippingCity   String        @map("shipping_city")
-  shippingStreet String        @map("shipping_street")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-
-  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items OrderItem[]
-
-  @@index([userId])
-  @@index([status])
-  @@index([createdAt(sort: Desc)])
-  @@map("orders")
-}
-
-model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String   @map("order_id")
-  productId String   @map("product_id")
-  shopId    String   @map("shop_id")
-  name      String
-  price     Float
-  quantity  Int
-  image     String?
-  size      String?
-  color     String?
-  createdAt DateTime @default(now()) @map("created_at")
-
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-
-  @@index([orderId])
-  @@index([productId])
-  @@index([shopId])
-  @@map("order_items")
-}
-
-model Comment {
-  id        String   @id @default(cuid())
-  productId String   @map("product_id")
-  userId    String   @map("user_id")
-  content   String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
-  @@index([userId])
-  @@index([createdAt(sort: Desc)])
-  @@map("comments")
-}
-
-model Rating {
-  id        String   @id @default(cuid())
-  productId String?  @map("product_id")
-  shopId    String?  @map("shop_id")
-  userId    String   @map("user_id")
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  shop    Shop?    @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, userId], name: "unique_product_user_rating")
-  @@unique([shopId, userId], name: "unique_shop_user_rating")
-  @@index([productId])
-  @@index([shopId])
-  @@index([userId])
-  @@map("ratings")
-}
-
-model Activity {
-  id          String       @id @default(cuid())
-  userId      String       @map("user_id")
-  type        ActivityType
-  productId   String?      @map("product_id")
-  category    String?
-  searchQuery String?      @map("search_query")
-  weight      Int          @default(1)
-  createdAt   DateTime     @default(now()) @map("created_at")
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([productId])
-  @@index([type])
-  @@index([createdAt])
-  @@map("activities")
-}
-
-model MpesaTransaction {
-  id                 String            @id @default(cuid())
-  merchantRequestId  String            @map("merchant_request_id")
-  checkoutRequestId  String            @unique @map("checkout_request_id")
-  resultCode         Int?
-  resultDesc         String?
-  amount             Float?
-  mpesaReceiptNumber String?           @map("mpesa_receipt_number")
-  transactionDate    DateTime?         @map("transaction_date")
-  phoneNumber        String            @map("phone_number")
-  status             TransactionStatus @default(pending)
-  userId             String?           @map("user_id")
-  metadata           Json?
-  createdAt          DateTime          @default(now()) @map("created_at")
-  updatedAt          DateTime          @updatedAt @map("updated_at")
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@map("mpesa_transactions")
-}
-
-model Contact {
-  id        String   @id
-  name      String
-  email     String
-  subject   String
-  message   String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([createdAt(sort: Desc)])
-  @@map("contacts")
 }

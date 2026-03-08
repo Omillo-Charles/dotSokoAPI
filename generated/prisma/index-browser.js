@@ -312,6 +312,26 @@ exports.Prisma.ContactScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.Update_viewsScalarFieldEnum = {
+  id: 'id',
+  update_id: 'update_id',
+  user_id: 'user_id',
+  viewed_at: 'viewed_at'
+};
+
+exports.Prisma.UpdatesScalarFieldEnum = {
+  id: 'id',
+  shop_id: 'shop_id',
+  type: 'type',
+  media_url: 'media_url',
+  product_id: 'product_id',
+  caption: 'caption',
+  views_count: 'views_count',
+  expires_at: 'expires_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -397,7 +417,9 @@ exports.Prisma.ModelName = {
   Rating: 'Rating',
   Activity: 'Activity',
   MpesaTransaction: 'MpesaTransaction',
-  Contact: 'Contact'
+  Contact: 'Contact',
+  update_views: 'update_views',
+  updates: 'updates'
 };
 
 /**

@@ -53,6 +53,12 @@ export const createShop = async (req, res, next) => {
             data
         });
 
+        // Update user's account type to seller
+        await prisma.user.update({
+            where: { id: ownerId },
+            data: { accountType: 'seller' }
+        });
+
         // Invalidate shop caches
         await invalidateCache("cache:/api/v1/shops*");
 

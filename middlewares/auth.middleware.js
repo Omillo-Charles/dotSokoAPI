@@ -33,4 +33,22 @@ const authorize = async (req, res, next) => {
     }
 }
 
+export const extractUserIdFromToken = (req) => {
+    try {
+        let token;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            token = req.headers.authorization.split(' ')[1];
+        } else if (req.cookies && req.cookies.accessToken) {
+            token = req.cookies.accessToken;
+        }
+
+        if (!token) return null;
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        return decoded.userId;
+    } catch (error) {
+        return null;
+    }
+};
+
 export default authorize;
