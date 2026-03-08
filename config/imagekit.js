@@ -33,18 +33,21 @@ export const upload = multer({
 export const uploadToImageKit = async (file, folder = "duuka/others") => {
     if (!file) return null;
     
-    try {
-        const response = await imagekit.upload({
+    return new Promise((resolve, reject) => {
+        imagekit.upload({
             file: file.buffer, // Buffer from memoryStorage
             fileName: `${Date.now()}-${file.originalname}`,
             folder: folder,
-            useUniqueFileName: true
+            useUniqueFileName: "true" // Passed as string to avoid request/form-data ERR_INVALID_ARG_TYPE crash
+        }, function(error, result) {
+            if(error) {
+                console.error("ImageKit Upload Error:", error);
+                reject(new Error("Failed to upload image to ImageKit"));
+            } else {
+                resolve(result);
+            }
         });
-        return response;
-    } catch (error) {
-        console.error("ImageKit Upload Error:", error);
-        throw new Error("Failed to upload image to ImageKit");
-    }
+    });
 };
 
 export { imagekit };

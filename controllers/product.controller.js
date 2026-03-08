@@ -250,7 +250,7 @@ export const createProduct = async (req, res, next) => {
             parsedColors = colors;
         }
 
-        images = images.slice(0, 3);
+        images = images.slice(0, 10);
         
         console.log("Creating product in Prisma with data:", {
             shopId: shop.id,
@@ -620,7 +620,7 @@ export const updateProduct = async (req, res, next) => {
             }
         }
 
-        currentImages = currentImages.slice(0, 3);
+        currentImages = currentImages.slice(0, 10);
 
         if (currentImages.length > 0) {
             updates.images = currentImages;

@@ -21,14 +21,14 @@ productRouter.post("/track", (req, res, next) => {
     next();
 }, trackActivity);
 
-productRouter.post("/", authorize, upload.array('image', 3), createProduct);
+productRouter.post("/", authorize, upload.array('image', 10), createProduct);
 productRouter.post("/:id/rate", authorize, rateProduct);
 productRouter.get("/", cacheMiddleware(300), getProducts); // Cache for 5 minutes
 productRouter.get("/shop/:id", cacheMiddleware(300), getProductsByShopId); // Cache for 5 minutes
 productRouter.get("/shop/handle/:username", cacheMiddleware(300), getProductsByShopHandle); // Cache for 5 minutes
 productRouter.get("/my-products", authorize, getMyProducts);
 productRouter.get("/:id", cacheMiddleware(600), getProductById); // Cache for 10 minutes
-productRouter.put("/:id", authorize, upload.array('image', 3), updateProduct);
+productRouter.put("/:id", authorize, upload.array('image', 10), updateProduct);
 productRouter.delete("/:id", authorize, deleteProduct);
 
 export default productRouter;
