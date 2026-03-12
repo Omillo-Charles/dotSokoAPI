@@ -628,6 +628,7 @@ export const updateProduct = async (req, res, next) => {
 
         // Remove existingImages from updates as it's not in the Prisma model
         delete updates.existingImages;
+        delete updates.existingVideos;
 
         console.log("Updating product in Prisma with data:", updates);
         const updatedProduct = await prisma.product.update({

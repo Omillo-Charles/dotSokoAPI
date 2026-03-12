@@ -1,3 +1,8 @@
+import dns from "node:dns";
+// Fix for ETIMEDOUT when uploading to ImageKit in some environments (Node 18+)
+// This forces IPv4 resolution first, avoiding Happy Eyeballs issues with IPv6
+dns.setDefaultResultOrder('ipv4first');
+
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";

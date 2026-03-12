@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "start": "node --dns-result-order=ipv4first app.js",
+    "dev": "nodemon --exec 'node --dns-result-order=ipv4first' app.js",
     "build": "npm install"
   },
   "dependencies": {
