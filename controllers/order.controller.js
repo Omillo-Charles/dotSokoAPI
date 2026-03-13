@@ -155,11 +155,23 @@ export const getMyOrders = async (req, res, next) => {
     try {
         const orders = await prisma.order.findMany({
             where: { userId: req.user?.id || req.user?._id?.toString() },
+            include: { items: true },
             orderBy: { createdAt: 'desc' }
         });
+
+        const mappedOrders = orders.map(order => ({
+            ...order,
+            shippingAddress: {
+                name: order.shippingName,
+                phone: order.shippingPhone,
+                city: order.shippingCity,
+                street: order.shippingStreet
+            }
+        }));
+
         res.status(200).json({
             success: true,
-            data: orders
+            data: mappedOrders
         });
     } catch (error) {
         next(error);
@@ -176,7 +188,15 @@ export const getOrderById = async (req, res, next) => {
         }
         res.status(200).json({
             success: true,
-            data: order
+            data: {
+                ...order,
+                shippingAddress: {
+                    name: order.shippingName,
+                    phone: order.shippingPhone,
+                    city: order.shippingCity,
+                    street: order.shippingStreet
+                }
+            }
         });
     } catch (error) {
         next(error);
@@ -196,12 +216,25 @@ export const getSellerOrders = async (req, res, next) => {
         const orders = await prisma.order.findMany({
             where: { items: { some: { shopId: shop.id } } },
             orderBy: { createdAt: 'desc' },
-            include: { user: { select: { name: true, email: true } } }
+            include: { 
+                user: { select: { name: true, email: true } },
+                items: { where: { shopId: shop.id } }
+            }
         });
+
+        const mappedOrders = orders.map(order => ({
+            ...order,
+            shippingAddress: {
+                name: order.shippingName,
+                phone: order.shippingPhone,
+                city: order.shippingCity,
+                street: order.shippingStreet
+            }
+        }));
 
         res.status(200).json({
             success: true,
-            data: orders
+            data: mappedOrders
         });
     } catch (error) {
         next(error);
@@ -281,7 +314,15 @@ export const updateOrderStatus = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: `Order status updated to ${status}`,
-            data: updated
+            data: {
+                ...updated,
+                shippingAddress: {
+                    name: updated.shippingName,
+                    phone: updated.shippingPhone,
+                    city: updated.shippingCity,
+                    street: updated.shippingStreet
+                }
+            }
         });
     } catch (error) {
         next(error);
