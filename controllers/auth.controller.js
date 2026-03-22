@@ -256,7 +256,12 @@ export const googleAuthSuccess = async (req, res, next) => {
             email: user.email,
             isVerified: user.isVerified
         });
-        res.redirect(`${FRONTEND_URL}/auth?mode=social-success&token=${tokens.accessToken}&user=${encodeURIComponent(userData)}`);
+
+        // If redirect_to is provided (e.g., from mobile), use it, otherwise use default FRONTEND_URL
+        const redirectTo = req.query.redirect_to || FRONTEND_URL;
+        const separator = redirectTo.includes('?') ? '&' : '?';
+        
+        res.redirect(`${redirectTo}${separator}mode=social-success&token=${tokens.accessToken}&user=${encodeURIComponent(userData)}`);
     } catch (error) {
         next(error);
     }
@@ -441,7 +446,12 @@ export const githubAuthSuccess = async (req, res, next) => {
             email: user.email,
             isVerified: user.isVerified
         });
-        res.redirect(`${FRONTEND_URL}/auth?mode=social-success&token=${tokens.accessToken}&user=${encodeURIComponent(userData)}`);
+
+        // Support mobile redirects via redirect_to query param
+        const redirectTo = req.query.redirect_to || FRONTEND_URL;
+        const separator = redirectTo.includes('?') ? '&' : '?';
+
+        res.redirect(`${redirectTo}${separator}mode=social-success&token=${tokens.accessToken}&user=${encodeURIComponent(userData)}`);
     } catch (error) {
         next(error);
     }
