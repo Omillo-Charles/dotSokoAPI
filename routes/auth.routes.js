@@ -60,6 +60,7 @@ authRouter.post("/sign-in", authLimiter, validate(signInSchema), signIn);
 authRouter.post("/sign-out", signOut);
 authRouter.post("/refresh", refresh);
 authRouter.post("/forgot-password", authLimiter, validate(forgotPasswordSchema), forgotPassword);
+authRouter.post("/verify-email", authLimiter, validate(verifyEmailSchema), verifyEmail);
 authRouter.post("/reset-password/:token", authLimiter, validate(resetPasswordSchema), resetPassword);
 authRouter.post("/change-password", authorize, authLimiter, changePassword);
 
