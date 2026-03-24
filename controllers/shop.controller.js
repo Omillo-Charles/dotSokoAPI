@@ -156,6 +156,9 @@ export const getShops = async (req, res, next) => {
 
 export const getShopById = async (req, res, next) => {
     try {
+        if (req.params.id === 'index' || req.params.id === 'create') {
+            return res.status(404).json({ success: false, message: 'Invalid shop ID' });
+        }
         const shop = await prisma.shop.findUnique({ where: { id: req.params.id } });
         if (!shop) {
             const error = new Error('Shop not found');
