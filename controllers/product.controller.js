@@ -56,6 +56,7 @@ export const getPersonalizedFeed = async (req, res, next) => {
         const commonInclude = { 
             shop: { 
                 select: { 
+                    id: true,
                     name: true, 
                     username: true, 
                     avatar: true, 
@@ -321,7 +322,7 @@ export const getProducts = async (req, res, next) => {
         const pageValue = parseInt(page) || 1;
         const skipValue = (pageValue - 1) * (limitValue > 0 ? limitValue : 100);
 
-        const commonInclude = { shop: { select: { name: true, username: true, avatar: true, isVerified: true } } };
+        const commonInclude = { shop: { select: { id: true, name: true, username: true, avatar: true, isVerified: true } } };
         let products;
 
         if (limitValue > 0) {
@@ -393,7 +394,7 @@ export const getProductsByShopId = async (req, res, next) => {
             if (maxPrice) where.price.lte = parseFloat(maxPrice);
         }
 
-        const include = { shop: { select: { name: true, username: true, avatar: true, isVerified: true } } };
+        const include = { shop: { select: { id: true, name: true, username: true, avatar: true, isVerified: true } } };
         let products;
 
         if (limitValue > 0) {
@@ -462,7 +463,7 @@ export const getProductsByShopHandle = async (req, res, next) => {
             if (maxPrice) where.price.lte = parseFloat(maxPrice);
         }
 
-        const include = { shop: { select: { name: true, username: true, avatar: true, isVerified: true } } };
+        const include = { shop: { select: { id: true, name: true, username: true, avatar: true, isVerified: true } } };
         let products;
 
         if (limitValue > 0) {
@@ -527,7 +528,7 @@ export const getProductById = async (req, res, next) => {
     try {
         const product = await prisma.product.findUnique({
             where: { id: req.params.id },
-            include: { shop: { select: { name: true, username: true, avatar: true, isVerified: true } } }
+            include: { shop: { select: { id: true, name: true, username: true, avatar: true, isVerified: true } } }
         });
         if (!product) {
             const error = new Error('Product not found');
