@@ -294,8 +294,35 @@ export const createProduct = async (req, res, next) => {
 
 export const getProducts = async (req, res, next) => {
     try {
-        const { q, cat, shop, minPrice, maxPrice, limit, page = 1 } = req.query;
+        const { q, cat, shop, minPrice, maxPrice, limit, page = 1, following } = req.query;
+        const userId = req.user?.id || req.user?._id?.toString();
         const where = {};
+
+        // If following=true, only show products from shops the user follows
+        if (following === 'true' && userId) {
+            const followedShops = await prisma.follow.findMany({
+                where: { followerId: userId },
+                select: { followingId: true }
+            });
+            
+            const followedShopIds = followedShops.map(f => f.followingId);
+            
+            if (followedShopIds.length > 0) {
+                where.shopId = { in: followedShopIds };
+            } else {
+                // User doesn't follow any shops, return empty array
+                return res.status(200).json({
+                    success: true,
+                    data: [],
+                    pagination: {
+                        total: 0,
+                        page: 1,
+                        limit: parseInt(limit) || 20,
+                        pages: 0
+                    }
+                });
+            }
+        }
 
         if (q) {
             where.OR = [
