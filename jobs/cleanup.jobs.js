@@ -91,27 +91,6 @@ export const cleanupExpiredPremium = async () => {
     }
 };
 
-/**
- * Clean up expired stories
- * Deletes stories that have passed their expiration date
- */
-export const cleanupExpiredStories = async () => {
-    try {
-        const result = await prisma.story.deleteMany({
-            where: {
-                expires_at: {
-                    lt: new Date()
-                }
-            }
-        });
-
-        if (result.count > 0) {
-            logger.info(`Cleaned up ${result.count} expired stories`);
-        }
-    } catch (error) {
-        logger.error('Error cleaning up expired stories:', error);
-    }
-};
 
 /**
  * Clean up old guest cart items
@@ -173,7 +152,6 @@ export const runAllCleanupJobs = async () => {
     await cleanupExpiredResetTokens();
     await cleanupExpiredOTPs();
     await cleanupExpiredPremium();
-    await cleanupExpiredStories();
     await cleanupOldCarts();
     await cleanupOldActivities();
     

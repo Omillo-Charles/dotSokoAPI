@@ -257,8 +257,8 @@ export const googleAuthSuccess = async (req, res, next) => {
             isVerified: user.isVerified
         });
 
-        // If redirect_to is provided (e.g., from mobile), use it, otherwise use default FRONTEND_URL
-        const redirectTo = req.query.redirect_to || FRONTEND_URL;
+        // Default to /account for a smoother dashboard transition
+        const redirectTo = req.query.redirect_to || `${FRONTEND_URL}/account`;
         const separator = redirectTo.includes('?') ? '&' : '?';
         
         res.redirect(`${redirectTo}${separator}mode=social-success&token=${tokens.accessToken}&user=${encodeURIComponent(userData)}`);
@@ -447,8 +447,8 @@ export const githubAuthSuccess = async (req, res, next) => {
             isVerified: user.isVerified
         });
 
-        // Support mobile redirects via redirect_to query param
-        const redirectTo = req.query.redirect_to || FRONTEND_URL;
+        // Default to /account for a smoother dashboard transition
+        const redirectTo = req.query.redirect_to || `${FRONTEND_URL}/account`;
         const separator = redirectTo.includes('?') ? '&' : '?';
 
         res.redirect(`${redirectTo}${separator}mode=social-success&token=${tokens.accessToken}&user=${encodeURIComponent(userData)}`);

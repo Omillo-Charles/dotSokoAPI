@@ -36,7 +36,6 @@ model User {
   orders                 Order[]
   ratings                Rating[]
   shop                   Shop?
-  update_views           update_views[]
   wishlist               Wishlist?
   followedShops          Shop[]             @relation("ShopFollowers")
 
@@ -86,7 +85,6 @@ model Shop {
   products       Product[]
   ratings        Rating[]
   owner          User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  updates        updates[]
   followers      User[]    @relation("ShopFollowers")
 
   @@index([ownerId])
@@ -122,7 +120,6 @@ model Product {
   orderItems    OrderItem[]
   shop          Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
   ratings       Rating[]
-  updates       updates[]
   wishlistedBy  Wishlist[]  @relation("ProductToWishlist")
 
   @@index([shopId])
@@ -308,38 +305,7 @@ model Contact {
   @@map("contacts")
 }
 
-model update_views {
-  id        String   @id
-  update_id String
-  user_id   String
-  viewed_at DateTime @default(now())
-  updates   updates  @relation(fields: [update_id], references: [id], onDelete: Cascade)
-  users     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@unique([update_id, user_id])
-  @@index([update_id])
-  @@index([user_id])
-}
-
-model updates {
-  id           String         @id
-  shop_id      String
-  type         String         @default("image")
-  media_url    String
-  product_id   String?
-  caption      String?
-  views_count  Int            @default(0)
-  expires_at   DateTime
-  created_at   DateTime       @default(now())
-  updated_at   DateTime
-  update_views update_views[]
-  products     Product?       @relation(fields: [product_id], references: [id])
-  shops        Shop           @relation(fields: [shop_id], references: [id], onDelete: Cascade)
-
-  @@index([created_at(sort: Desc)])
-  @@index([expires_at])
-  @@index([shop_id])
-}
 
 enum AccountType {
   buyer
