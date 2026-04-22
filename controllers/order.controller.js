@@ -342,7 +342,7 @@ export const getSellerOrders = async (req, res, next) => {
 export const trackOrder = async (req, res, next) => {
     try {
         let { id } = req.params;
-        id = id.trim().replace(/^#/, "");
+        id = id.trim().replace(/^#/, "").toLowerCase();
         let order;
         if (id.length > 12) {
             order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
