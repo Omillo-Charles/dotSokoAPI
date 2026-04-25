@@ -1,5 +1,24 @@
 import dns from "node:dns";
-dns.setDefaultResultOrder('ipv4first');
+import https from "node:https";
+
+// DNS FIX: Force IPv4 first
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
+https.globalAgent.options.family = 4;
+
+const originalLookup = dns.lookup;
+dns.lookup = (hostname, options, callback) => {
+  if (typeof options === "function") {
+    callback = options;
+    options = { family: 4 };
+  } else if (typeof options === "number") {
+    options = { family: 4 };
+  } else {
+    options = { ...options, family: 4 };
+  }
+  return originalLookup(hostname, options, callback);
+};
 
 import ImageKit from "imagekit";
 import { config } from "dotenv";

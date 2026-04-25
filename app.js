@@ -1,7 +1,14 @@
 import dns from "node:dns";
-// Fix for ETIMEDOUT when uploading to ImageKit in some environments (Node 18+)
-// This forces IPv4 resolution first, avoiding Happy Eyeballs issues with IPv6
-dns.setDefaultResultOrder('ipv4first');
+import https from "node:https";
+
+// DNS FIX: Force IPv4 first to avoid IPv6 ETIMEDOUT issues in Node.js 18+
+// This is applied globally at the very start of the app
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
+// Ensure HTTPS requests prefer IPv4
+https.globalAgent.options.family = 4;
 
 import express from "express";
 import cors from "cors";
