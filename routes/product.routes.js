@@ -16,7 +16,7 @@ productRouter.get("/feed", (req, res, next) => {
         return authorize(req, res, next);
     }
     next();
-}, cacheMiddleware(180), getPersonalizedFeed); // Cache for 3 minutes
+}, getPersonalizedFeed);
 
 productRouter.post("/track", (req, res, next) => {
     if (req.headers.authorization) {
@@ -27,7 +27,7 @@ productRouter.post("/track", (req, res, next) => {
 
 productRouter.post("/", authorize, createLimiter, upload.array('image', 10), validateImageUpload, validate(createProductSchema), createProduct);
 productRouter.post("/:id/rate", authorize, createLimiter, validate(rateProductSchema), rateProduct);
-productRouter.get("/", cacheMiddleware(300), getProducts); // Cache for 5 minutes
+productRouter.get("/", getProducts);
 productRouter.get("/shop/:id", cacheMiddleware(300), getProductsByShopId); // Cache for 5 minutes
 productRouter.get("/shop/handle/:username", cacheMiddleware(300), getProductsByShopHandle); // Cache for 5 minutes
 productRouter.get("/my-products", authorize, getMyProducts);

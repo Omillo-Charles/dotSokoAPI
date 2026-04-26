@@ -67,39 +67,20 @@ export const getPersonalizedFeed = async (req, res, next) => {
             } 
         };
 
-        const totalCount = await prisma.product.count();
-
-        if (!userId) {
-            const products = await prisma.product.findMany({
-                orderBy: { createdAt: 'desc' },
-                take: limitValue,
-                skip: skipValue,
-                include: commonInclude
-            });
-            
-            return res.status(200).json({ 
-                success: true, 
-                data: products,
-                pagination: {
-                    total: totalCount,
-                    page: pageValue,
-                    limit: limitValue,
-                    pages: Math.ceil(totalCount / limitValue)
-                }
-            });
-        }
-
-        // Optimized: Get top categories based on user activity
-        const topCategories = await prisma.activity.groupBy({
-            by: ['category'],
-            where: { 
-                userId,
-                category: { not: null }
-            },
-            _sum: { weight: true },
-            orderBy: { _sum: { weight: 'desc' } },
-            take: 3
-        });
+        // Parallelize total count and user activity aggregation
+        const [totalCount, topCategories] = await Promise.all([
+            prisma.product.count(),
+            prisma.activity.groupBy({
+                by: ['category'],
+                where: { 
+                    userId,
+                    category: { not: null }
+                },
+                _sum: { weight: true },
+                orderBy: { _sum: { weight: 'desc' } },
+                take: 3
+            })
+        ]);
 
         const categoryNames = topCategories.map(c => c.category);
 
@@ -108,18 +89,15 @@ export const getPersonalizedFeed = async (req, res, next) => {
             where: {
                 OR: [
                     { category: { in: categoryNames } },
-                    { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } // Or newest products
+                    { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
                 ]
             },
             include: commonInclude,
-            orderBy: [
-                { createdAt: 'desc' }
-            ],
-            take: limitValue * 10, // Fetch more to allow some in-memory re-ranking if needed
+            orderBy: { createdAt: 'desc' },
+            take: limitValue * 2,
             skip: skipValue
         });
 
-        // Simple scoring in-memory for the final selection
         const scoredProducts = products.map(product => {
             let score = 0;
             const catIndex = categoryNames.indexOf(product.category);
@@ -321,17 +299,16 @@ export const getProducts = async (req, res, next) => {
 
         // If following=true, only show products from shops the user follows
         if (following === 'true' && userId) {
-            const followedShops = await prisma.follow.findMany({
-                where: { followerId: userId },
-                select: { followingId: true }
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { followedShops: { select: { id: true } } }
             });
             
-            const followedShopIds = followedShops.map(f => f.followingId);
+            const followedShopIds = user?.followedShops?.map(s => s.id) || [];
             
             if (followedShopIds.length > 0) {
                 where.shopId = { in: followedShopIds };
             } else {
-                // User doesn't follow any shops, return empty array
                 return res.status(200).json({
                     success: true,
                     data: [],
@@ -399,33 +376,27 @@ export const getProducts = async (req, res, next) => {
         const skipValue = (pageValue - 1) * (limitValue > 0 ? limitValue : 100);
 
         const commonInclude = { shop: { select: { id: true, name: true, username: true, avatar: true, isVerified: true } } };
-        let products;
-
-        if (limitValue > 0) {
-            products = await prisma.product.findMany({
+        
+        const [products, total] = await Promise.all([
+            limitValue > 0 ? prisma.product.findMany({
                 where,
                 orderBy,
                 take: limitValue,
                 skip: skipValue,
                 include: commonInclude
-            });
-        } else if (limitValue === -1) {
-            products = await prisma.product.findMany({
+            }) : limitValue === -1 ? prisma.product.findMany({
                 where,
                 orderBy,
                 include: commonInclude
-            });
-        } else {
-            products = await prisma.product.findMany({
+            }) : prisma.product.findMany({
                 where,
                 orderBy,
                 take: 100,
                 skip: skipValue,
                 include: commonInclude
-            });
-        }
-
-        const total = await prisma.product.count({ where });
+            }),
+            prisma.product.count({ where })
+        ]);
 
         res.status(200).json({
             success: true,
